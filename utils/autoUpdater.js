@@ -1,7 +1,7 @@
 const simpleGit = require('simple-git');
 const { exec } = require('child_process');
 
-const REPO_URL = 'https://github.com/YourUsername/YourRepo.git'; // ← Replace this with your repo
+const REPO_URL = 'https://github.com/gimnaze/nullusmoderation.git'; // ← Replace this with your repo
 const BRANCH = 'main'; // or 'master'
 const CHECK_INTERVAL_MINUTES = 15;
 
