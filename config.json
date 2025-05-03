@@ -1,0 +1,12 @@
+{
+  "token": "YOUR_TOKEN",
+  "clientId": "1364480964578771015",
+  "guildId": "1358250594070167572",
+  "prefix": ".",
+  "moderatorRoleId": "1364549631945609307",
+  "headAdminRoleId": "1364549768369672272",
+  "muteRoleId": "1364549847650140190",
+  "modLogChannelId": "1364549895930908773",
+  "githubRepo": "",
+  "updateCheckIntervalMinutes": "15"
+}
