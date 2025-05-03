@@ -55,11 +55,30 @@ module.exports = async function antiPingHandler(message) {
       console.warn(`Could not DM ${member.user.tag}`);
     }
 
-    // Timeout
+    // Timeout the member for 5 minutes
     await member.timeout(duration, 'Pinged protected user(s)');
     await message.delete();
 
-    // Log
+    // Send an embed to the user in the channel
+    const timeoutEmbed = new EmbedBuilder()
+      .setTitle('🚫 Action Taken: Timeout')
+      .setColor(0xff0000)
+      .setDescription(`<@${member.id}> Do not ping the protected users. You have been muted for 5 minutes.`)
+      .addFields(
+        {
+          name: 'Reason',
+          value: `Pinged protected user(s): ${message.mentions.users
+            .filter(u => protectedUserIDs.includes(u.id))
+            .map(u => `<@${u.id}>`)
+            .join(', ')}`,
+        },
+        { name: 'Duration', value: '5 minutes' }
+      )
+      .setTimestamp();
+
+    await message.channel.send({ embeds: [timeoutEmbed] });
+
+    // Log the timeout in mod log
     const logChannel = message.guild.channels.cache.get(config.modLogChannelId);
     if (logChannel) {
       const logEmbed = new EmbedBuilder()
