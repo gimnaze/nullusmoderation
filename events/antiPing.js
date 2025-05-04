@@ -5,17 +5,29 @@ const protectedUserIDs = [
   '1277231201190674495',
   '888640419842392084',
   '467715745669971978',
-  '774014188288868423'
+  '705832816344170566'
 ];
 
 module.exports = async function antiPingHandler(message) {
   if (message.author.bot || !message.guild || !message.mentions.users.size) return;
 
-  const pingedProtected = message.mentions.users.some(user =>
+  // Check if the protected user was directly mentioned in the message content
+  const mentionedProtectedUsers = message.mentions.users.filter(user =>
     protectedUserIDs.includes(user.id)
   );
 
-  if (!pingedProtected) return;
+  // If no protected users were mentioned directly, ignore
+  if (mentionedProtectedUsers.size === 0) return;
+
+  // Prevent punishing replies that don't directly mention the protected user in the message body
+  if (message.reference) {
+    const repliedMessage = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
+    if (repliedMessage && protectedUserIDs.includes(repliedMessage.author.id)) {
+      // If it's a reply to a protected user, but no explicit ping in message, ignore
+      const pingedInContent = mentionedProtectedUsers.some(user => message.content.includes(`<@${user.id}>`) || message.content.includes(`<@!${user.id}>`));
+      if (!pingedInContent) return;
+    }
+  }
 
   const member = message.member;
   if (
@@ -36,14 +48,10 @@ module.exports = async function antiPingHandler(message) {
         .setColor(0xff9900)
         .setDescription(`You were timed out in **${message.guild.name}** for **5 minutes**.`)
         .addFields(
-          {
-            name: 'Reason',
-            value: 'You pinged protected users.',
-          },
+          { name: 'Reason', value: 'You pinged protected users.' },
           {
             name: 'Pinged',
-            value: message.mentions.users
-              .filter(u => protectedUserIDs.includes(u.id))
+            value: [...mentionedProtectedUsers.values()]
               .map(u => `<@${u.id}>`)
               .join(', '),
           }
@@ -55,11 +63,9 @@ module.exports = async function antiPingHandler(message) {
       console.warn(`Could not DM ${member.user.tag}`);
     }
 
-    // Timeout the member for 5 minutes
     await member.timeout(duration, 'Pinged protected user(s)');
     await message.delete();
 
-    // Send an embed to the user in the channel
     const timeoutEmbed = new EmbedBuilder()
       .setTitle('🚫 Action Taken: Timeout')
       .setColor(0xff0000)
@@ -67,8 +73,7 @@ module.exports = async function antiPingHandler(message) {
       .addFields(
         {
           name: 'Reason',
-          value: `Pinged protected user(s): ${message.mentions.users
-            .filter(u => protectedUserIDs.includes(u.id))
+          value: `Pinged protected user(s): ${[...mentionedProtectedUsers.values()]
             .map(u => `<@${u.id}>`)
             .join(', ')}`,
         },
@@ -78,24 +83,21 @@ module.exports = async function antiPingHandler(message) {
 
     await message.channel.send({ embeds: [timeoutEmbed] });
 
-    // Log the timeout in mod log
     const logChannel = message.guild.channels.cache.get(config.modLogChannelId);
     if (logChannel) {
       const logEmbed = new EmbedBuilder()
         .setTitle('🚫 Anti-Ping Violation')
         .setColor(0xff0000)
         .addFields(
-          { name: 'User', value: `<@${member.id}> (${member.user.tag})`, inline: false },
-          { name: 'Action', value: 'Timed out for 5 minutes', inline: false },
+          { name: 'User', value: `<@${member.id}> (${member.user.tag})` },
+          { name: 'Action', value: 'Timed out for 5 minutes' },
           {
             name: 'Reason',
-            value: `Pinged: ${message.mentions.users
-              .filter(u => protectedUserIDs.includes(u.id))
+            value: `Pinged: ${[...mentionedProtectedUsers.values()]
               .map(u => `<@${u.id}>`)
               .join(', ')}`,
-            inline: false,
           },
-          { name: 'Message Link', value: `[Jump to message](${message.url})`, inline: false }
+          { name: 'Message Link', value: `[Jump to message](${message.url})` }
         )
         .setTimestamp();
 
