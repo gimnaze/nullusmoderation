@@ -19,7 +19,7 @@ module.exports = {
     if (!user) {
       return interactionOrMessage.reply({
         content: 'Please provide a valid user.',
-        ephemeral: true
+        ephemeral: false
       });
     }
 

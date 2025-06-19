@@ -35,7 +35,7 @@ module.exports = {
     if (isWhitelisted(target.id)) {
       return interactionOrMessage.reply({
         content: '⚠️ This user is whitelisted and cannot be kicked.',
-        ephemeral: true
+        ephemeral: false
       });
     }
 

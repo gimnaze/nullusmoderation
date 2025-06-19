@@ -19,7 +19,7 @@ module.exports = {
     const config = client.config;
 
     if (!member.roles.cache.has(config.moderatorRoleId)) {
-      return interactionOrMessage.reply({ content: '❌ You do not have permission to use this command.', ephemeral: true });
+      return interactionOrMessage.reply({ content: '❌ You do not have permission to use this command.', ephemeral: false });
     }
 
     const caseNumber = isSlash

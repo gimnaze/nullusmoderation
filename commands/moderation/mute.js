@@ -49,7 +49,7 @@ module.exports = {
     if (isWhitelisted(targetUser.id)) {
       return interactionOrMessage.reply({
         content: '⚠️ This user is whitelisted and cannot be muted.',
-        ephemeral: true
+        ephemeral: false
       });
     }
 

@@ -42,7 +42,7 @@ module.exports = {
     if (isWhitelisted(targetUser.id)) {
       return interactionOrMessage.reply({
         content: '⚠️ This user is whitelisted and cannot be warned.',
-        ephemeral: true
+        ephemeral: false
       });
     }
 
