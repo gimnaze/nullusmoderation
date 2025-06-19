@@ -11,7 +11,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle('🛠️ Support Server')
-      .setDescription(`[Click here to join the support server owned by <@1277231201190674495>](${inviteLink})`)
+      .setDescription(`Join the Support Server owned by the Bots Developer: Gimnaze (${inviteLink})`)
       .setColor('Blue')
       .setFooter({ text: 'We’re here to help!' });
 
