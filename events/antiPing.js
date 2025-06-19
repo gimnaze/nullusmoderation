@@ -8,23 +8,24 @@ const protectedUserIDs = [
   '705832816344170566'
 ];
 
+
+const bypassRoleId = '1325300562971066379'; 
+
 module.exports = async function antiPingHandler(message) {
   if (message.author.bot || !message.guild || !message.mentions.users.size) return;
 
-  // Check if the protected user was directly mentioned in the message content
   const mentionedProtectedUsers = message.mentions.users.filter(user =>
     protectedUserIDs.includes(user.id)
   );
 
-  // If no protected users were mentioned directly, ignore
   if (mentionedProtectedUsers.size === 0) return;
 
-  // Prevent punishing replies that don't directly mention the protected user in the message body
   if (message.reference) {
     const repliedMessage = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
     if (repliedMessage && protectedUserIDs.includes(repliedMessage.author.id)) {
-      // If it's a reply to a protected user, but no explicit ping in message, ignore
-      const pingedInContent = mentionedProtectedUsers.some(user => message.content.includes(`<@${user.id}>`) || message.content.includes(`<@!${user.id}>`));
+      const pingedInContent = mentionedProtectedUsers.some(user =>
+        message.content.includes(`<@${user.id}>`) || message.content.includes(`<@!${user.id}>`)
+      );
       if (!pingedInContent) return;
     }
   }
@@ -38,10 +39,16 @@ module.exports = async function antiPingHandler(message) {
     return;
   }
 
+  // ✅ Check for bypass role
+  const bypassRole = message.guild.roles.cache.get(bypassRoleId);
+  if (bypassRole && member.roles.highest.comparePositionTo(bypassRole) >= 0) {
+    console.log(`${member.user.tag} has bypass role or higher. Skipping punishment.`);
+    return;
+  }
+
   const duration = 5 * 60 * 1000; // 5 minutes
 
   try {
-    // DM the user
     try {
       const dmEmbed = new EmbedBuilder()
         .setTitle('🚫 You have been timed out')
