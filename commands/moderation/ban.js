@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const logAction = require('../../utils/logAction');
 const dmUser = require('../../utils/dmUser');
+const isWhitelisted = require('../../utils/whitelist'); // ✅ Import the whitelist check
 
 module.exports = {
   name: 'ban',
@@ -15,7 +16,10 @@ module.exports = {
     const member = interactionOrMessage.member;
 
     if (!member.roles.cache.has(client.config.moderatorRoleId)) {
-      return interactionOrMessage.reply({ content: 'You do not have permission to use this command.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'You do not have permission to use this command.',
+        ephemeral: false
+      });
     }
 
     const targetUser = isSlash
@@ -27,12 +31,26 @@ module.exports = {
       : args.slice(1).join(' ') || 'No reason provided.';
 
     if (!targetUser) {
-      return interactionOrMessage.reply({ content: 'You must mention a valid user to ban.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'You must mention a valid user to ban.',
+        ephemeral: false
+      });
+    }
+
+    // ✅ Whitelist check
+    if (isWhitelisted(targetUser.id)) {
+      return interactionOrMessage.reply({
+        content: '⚠️ This user is whitelisted and cannot be banned.',
+        ephemeral: true
+      });
     }
 
     const targetMember = await interactionOrMessage.guild.members.fetch(targetUser.id).catch(() => null);
     if (!targetMember || !targetMember.bannable) {
-      return interactionOrMessage.reply({ content: 'I cannot ban this user.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'I cannot ban this user.',
+        ephemeral: false
+      });
     }
 
     await dmUser(targetUser, 'You were banned', reason);

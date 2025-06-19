@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const logAction = require('../../utils/logAction');
 const dmUser = require('../../utils/dmUser');
-const { incrementPunishment } = require('../../utils/status'); // ✅ Import tracker
+const { incrementPunishment } = require('../../utils/status');
+const isWhitelisted = require('../../utils/whitelist'); // ✅ Import whitelist
 
 module.exports = {
   name: 'kick',
@@ -26,6 +27,18 @@ module.exports = {
       return interactionOrMessage.reply({ content: 'You don’t have permission to use this.', ephemeral: false });
     }
 
+    if (!target) {
+      return interactionOrMessage.reply({ content: 'You must mention a valid user to kick.', ephemeral: false });
+    }
+
+    // ✅ Whitelist check
+    if (isWhitelisted(target.id)) {
+      return interactionOrMessage.reply({
+        content: '⚠️ This user is whitelisted and cannot be kicked.',
+        ephemeral: true
+      });
+    }
+
     const targetMember = await interactionOrMessage.guild.members.fetch(target.id).catch(() => null);
     if (!targetMember || !targetMember.kickable) {
       return interactionOrMessage.reply({ content: 'I cannot kick this user.', ephemeral: false });
@@ -34,7 +47,7 @@ module.exports = {
     await dmUser(target, 'You were kicked', reason);
     await targetMember.kick(reason);
 
-    incrementPunishment(); // ✅ Count the kick
+    incrementPunishment();
 
     const embed = new EmbedBuilder()
       .setTitle('👢 Member Kicked')

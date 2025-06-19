@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const logAction = require('../../utils/logAction');
 const { addWarning } = require('../../utils/warnings');
+const isWhitelisted = require('../../utils/whitelist'); // ✅ Import whitelist check
 
 module.exports = {
   name: 'warn',
@@ -16,7 +17,10 @@ module.exports = {
     const config = client.config;
 
     if (!member.roles.cache.has(config.moderatorRoleId)) {
-      return interactionOrMessage.reply({ content: 'You do not have permission to use this command.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'You do not have permission to use this command.',
+        ephemeral: false
+      });
     }
 
     const targetUser = isSlash
@@ -28,7 +32,18 @@ module.exports = {
       : args.slice(1).join(' ') || 'No reason provided.';
 
     if (!targetUser) {
-      return interactionOrMessage.reply({ content: 'Please mention a valid user to warn.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'Please mention a valid user to warn.',
+        ephemeral: false
+      });
+    }
+
+    // ✅ Whitelist check
+    if (isWhitelisted(targetUser.id)) {
+      return interactionOrMessage.reply({
+        content: '⚠️ This user is whitelisted and cannot be warned.',
+        ephemeral: true
+      });
     }
 
     const warning = {
@@ -41,7 +56,7 @@ module.exports = {
     const caseNumber = addWarning(warning);
 
     const embed = new EmbedBuilder()
-      .setTitle('User Warned')
+      .setTitle('⚠️ User Warned')
       .setDescription(`${targetUser.tag} has been warned.`)
       .addFields(
         { name: 'Reason', value: reason },

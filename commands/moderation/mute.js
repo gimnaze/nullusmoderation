@@ -1,8 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const logAction = require('../../utils/logAction');
 const dmUser = require('../../utils/dmUser');
-const { incrementPunishment } = require('../../utils/status'); // ✅ Add this
-const ms = require('ms'); // Requires `npm install ms`
+const { incrementPunishment } = require('../../utils/status');
+const ms = require('ms'); // npm install ms
+const isWhitelisted = require('../../utils/whitelist'); // ✅ Whitelist import
 
 module.exports = {
   name: 'mute',
@@ -19,7 +20,10 @@ module.exports = {
     const config = client.config;
 
     if (!member.roles.cache.has(config.moderatorRoleId)) {
-      return interactionOrMessage.reply({ content: 'You do not have permission to use this command.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'You do not have permission to use this command.',
+        ephemeral: false
+      });
     }
 
     const targetUser = isSlash
@@ -35,27 +39,47 @@ module.exports = {
       : args.slice(2).join(' ') || 'No reason provided.';
 
     if (!targetUser) {
-      return interactionOrMessage.reply({ content: 'Please mention a valid user to mute.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'Please mention a valid user to mute.',
+        ephemeral: false
+      });
+    }
+
+    // ✅ Whitelist check
+    if (isWhitelisted(targetUser.id)) {
+      return interactionOrMessage.reply({
+        content: '⚠️ This user is whitelisted and cannot be muted.',
+        ephemeral: true
+      });
     }
 
     const durationMs = ms(rawDuration);
     if (!durationMs) {
-      return interactionOrMessage.reply({ content: 'Invalid duration format. Try `1h`, `3d`, `10d`, etc.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'Invalid duration format. Try `1h`, `3d`, `10d`, etc.',
+        ephemeral: false
+      });
     }
 
     const targetMember = await interactionOrMessage.guild.members.fetch(targetUser.id).catch(() => null);
     if (!targetMember || !targetMember.moderatable) {
-      return interactionOrMessage.reply({ content: 'I cannot mute this user.', ephemeral: false });
+      return interactionOrMessage.reply({
+        content: 'I cannot mute this user.',
+        ephemeral: false
+      });
     }
 
     let actionType;
-    if (durationMs <= 7 * 24 * 60 * 60 * 1000) { // 7 days
+    if (durationMs <= 7 * 24 * 60 * 60 * 1000) {
       await targetMember.timeout(durationMs, reason);
       actionType = `Timed mute (${rawDuration})`;
     } else {
       const muteRole = interactionOrMessage.guild.roles.cache.get(config.muteRoleId);
       if (!muteRole) {
-        return interactionOrMessage.reply({ content: 'Mute role not found. Check your config.', ephemeral: false });
+        return interactionOrMessage.reply({
+          content: 'Mute role not found. Check your config.',
+          ephemeral: false
+        });
       }
 
       await targetMember.roles.add(muteRole, reason);
