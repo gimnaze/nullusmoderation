@@ -15,6 +15,6 @@ module.exports = {
       .setColor('Blue')
       .setFooter({ text: 'We’re here to help!' });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], ephemeral: false });
   }
 };
